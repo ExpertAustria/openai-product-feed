@@ -1,0 +1,56 @@
+name: OpenAI-Feed bauen und veröffentlichen
+
+on:
+  schedule:
+    - cron: "17 5 * * *" # täglich 05:17 UTC (Merchant-Feed wird gegen 04:38 UTC erzeugt)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Tests
+        run: npm test
+      - name: Feed bauen
+        run: node build-feed.mjs
+        env:
+          MERCHANT_FEED_URL: ${{ vars.MERCHANT_FEED_URL }}
+          SELLER_NAME: ${{ vars.SELLER_NAME }}
+          TARGET_COUNTRIES: ${{ vars.TARGET_COUNTRIES || 'AT' }}
+          STORE_COUNTRY: ${{ vars.STORE_COUNTRY || 'AT' }}
+          FEED_DOMAIN: ${{ vars.FEED_DOMAIN }}
+      - name: Bericht als Artefakt (nicht öffentlich)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: feed-report
+          path: report/
+          if-no-files-found: ignore
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
