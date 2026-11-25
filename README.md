@@ -22,7 +22,10 @@ oder `.env`-Dateien committen.
    **CNAME** `feeds` → `<github-konto>.github.io` setzen, danach „Enforce HTTPS“ aktivieren.
 5. *Actions → OpenAI-Feed bauen und veröffentlichen → Run workflow*.
 
-Feed-URL danach: `https://<domain>/openai_feed.jsonl`
+Feed-URL danach: `https://<domain>/openai_feed.jsonl.gz`
+
+Hinweis: Das OpenAI Business Hub verlangt JSONL **gzip-komprimiert** (`.jsonl.gz`, UTF-8, ein Produkt pro Zeile).
+Unkomprimiertes `.jsonl` wird abgelehnt.
 
 ## Lokal testen
 ```bash

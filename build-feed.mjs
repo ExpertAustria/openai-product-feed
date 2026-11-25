@@ -13,6 +13,7 @@
 
 import { readFile, writeFile, mkdir, appendFile } from "node:fs/promises";
 import { join } from "node:path";
+import { gzipSync } from "node:zlib";
 import { buildFeed } from "./src/build.mjs";
 
 const env = process.env;
@@ -91,7 +92,11 @@ if (report.uebersprungen_quote > maxSkip) {
 }
 
 await mkdir(outDir, { recursive: true });
-await writeFile(join(outDir, "openai_feed.jsonl"), lines.join("\n") + "\n");
+// OpenAI akzeptiert JSONL nur gzip-komprimiert (.jsonl.gz), laut Business-Hub-Validierung.
+await writeFile(
+  join(outDir, "openai_feed.jsonl.gz"),
+  gzipSync(Buffer.from(lines.join("\n") + "\n", "utf8"), { level: 9 }),
+);
 await writeFile(join(outDir, ".nojekyll"), "");
 if (env.FEED_DOMAIN) await writeFile(join(outDir, "CNAME"), env.FEED_DOMAIN.trim() + "\n");
-console.log(`Geschrieben: ${join(outDir, "openai_feed.jsonl")}`);
+console.log(`Geschrieben: ${join(outDir, "openai_feed.jsonl.gz")}`);
